@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
-
+<html lang="kr">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -9,25 +8,176 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css"
         integrity="sha512-NmLkDIU1C/C88wi324HBc+S2kLhi08PN5GDeUVVVC/BVt/9Izdsc9SVeVfA1UZbY3sHUlDSyRXhCzHfr6hmPPw=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
     <style>
+        section {
+            padding: 0px 10px;
+
+        }
+        .name{
+            font-size:200%;
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .p {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .p img {
+            border-radius: 5%;
+        
+        }
+
+        .rankname{
+            margin: 30px 0px 0px;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            font-weight: bold;
+            
+        }
+
+        .rank{
+            margin: 0px 0px 30px;
+            justify-content: center;
+            text-align: center;
+            width: 100%;
+            
+        }
+
+        #empty {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #unrank {
+            text-align: center;
+            margin-top: 30px;
+        }
 
     </style>
+
 </head>
-    
+
 <body>
-    <script src="https://code.jquery.com/jquery-3.6.1.js"
-        integrity="sha256-3zlB5s2uwoUzrXK3BT7AX3FyvojsraNFxCc2vC/7pNI=" crossorigin="anonymous"></script>
+    <section>
+        <div id="empty" style="display: none;">
+            해당 id가 없습니다.
+        </div>
+        <div class="p">
+            <img src="" alt="" id="profileImage"/>
+        </div>
+        <div class="name">
+            <p id="userId"></p>
+        </div>
+        <div id="soleRank" style="display: none;">
+            <div class="rankname">
+                <br> < 솔로 랭크 > </br>
+            </div>
+            <div class="rank">
+                <p>
+                    <img src="" alt="" id="soleRankImage">
+                </p>
+                <p id="soleRankScore">
+                    솔로랭크티어 점수
+                </p>
+                <p id="soleRankStep">
+                    솔로랭크단계
+                </p>
+            </div>
+        </div>
+        <div id="freeRank" style="display: none;">
+            <div class="rankname">
+                <br> < 자유 랭크 > </br>
+            </div>
+            <div class="rank">
+                <p>
+                    <img src="" alt="" id="freeRankImage">
+                </p>
+                <p id="freeRankScore">
+                    자유랭크티어 점수
+                </p>
+                <p id="freeRankStep">
+                    자유랭크단계
+                </p>
+            </div>
+        </div>
+        <div id="unrank" style="display: none;">
+            unRank입니다.
+        </div>
+    </section>
     <script>
-        $.ajax({
-            method: "GET",
-            url: "https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-account/100%20PUER%20LOVE",
-            data: {"status":{"message":"Unauthorized","status_code":401}}
-            Headers: 
+        $(function () {
+            function getUrlVars() {
+                var vars = [], hash;
+                var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+                for(var i = 0; i < hashes.length; i++)
+                {
+                    hash = hashes[i].split('=');
+                    vars.push(hash[0]);
+                    vars[hash[0]] = hash[1];
+                }
+                return vars;
+            }
+            $.ajax({
+                url: 'http://43.200.126.158:3000/lol/' + getUrlVars().id.trim(),
+                method: 'GET',
+                success: function (res) {
+                    if (res.status === 200) {
+                        $('#empty').hide();
+                        var data = res.data;
+                        var user = data.user;
+                        var league = data.league;
+                        var soleRank;
+                        var freeRank;
+                        for (var i = 0; i < league.length; i++) {
+                            if (league[i].queueType == 'RANKED_FLEX_SR') {
+                                freeRank = league[i];
+                            } else {
+                                soleRank = league[i];
+                            }
+                        }
+                        var profileImage = `https://opgg-static.akamaized.net/images/profile_icons/profileIcon${user.profileIconId}.jpg?image=q_auto&image=q_auto,f_webp,w_auto&v=${user.revisionDate}`;
+                        $('#profileImage').attr('src', profileImage);
+                        if (soleRank) {
+                            var soleRankImage = `https://opgg-static.akamaized.net/images/medals_new/${soleRank.tier.toLocaleLowerCase()}.png?image=q_auto,f_webp,w_144`;
+                            $('#soleRankImage').attr('src', soleRankImage);
+                            $('#soleRankScore').text(`솔로랭크 점수: ${soleRank.leaguePoints}점`);
+                            $('#soleRankStep').text(`솔로랭크 단계: ${soleRank.rank}`);
+                            $('#soleRank').show();
+                            $('#unrank').hide();
+                        } else {
+                            $('#soleRank').hide();
+                        }
+                        if (freeRank) {
+                            var freeRankImage = `https://opgg-static.akamaized.net/images/medals_new/${freeRank.tier.toLocaleLowerCase()}.png?image=q_auto,f_webp,w_144`;
+                            $('#freeRankImage').attr('src', freeRankImage);
+                            $('#freeRankScore').text(`솔로랭크 점수: ${freeRank.leaguePoints}점`);
+                            $('#freeRankStep').text(`솔로랭크 단계: ${freeRank.rank}`);
+                            $('#freeRank').show();
+                            $('#unrank').hide();
+                        } else {
+                            $('#freeRank').hide();
+                        }
+                        if (!soleRank && !freeRank) {
+                            $('#unrank').show();
+                        }
+                        console.log(freeRank);
+                        $('#userId').text(user.name);
+                    } else {
+                        $('#empty').show();
+                    }
+                },
+                error: function (err) {
+                    $('#empty').show();
+                }  
+            })
+            // $('#userId').text(decodeURIComponent(name));
         })
-            .done(function (msg) {
-                alert("Data Saved: " + msg);
-            });
     </script>
 </body>
-
 </html>
